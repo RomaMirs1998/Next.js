@@ -28,7 +28,7 @@ export default function Home(props) {
     if (location) {
       const fetchData = async () => {
         try {
-          const data = await fetchCoffeeStores(location);
+          const data = await fetch("/api/getCoffeeStoresByLocation?location=" + location).then(res => res.json());
           dispatch({type:ACTION_TYPES.SET_COFFEE_STORES,payload:data})
           setCoffeeStoresError(null);
         } catch (e) {

@@ -47,7 +47,7 @@ const CoffeStore = (props) => {
   console.log("coffeeStores", coffeeStores);
 
   useEffect(() => {
-    if (isEmpty(props.storesFromGSP) > 0) {
+    if (isEmpty(props.storesFromGSP)) {
       if (coffeeStores.length > 0) {
         const found = coffeeStores.find((store) => store.fsq_id == id);
         setCoffeeStores(found);
