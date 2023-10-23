@@ -1,57 +1,55 @@
-const Airtable = require("airtable");
-const base = new Airtable({
-  apiKey: process.env.NEXT_PUBLIC_API_KEY_AIRTABLE,
-}).base(process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID);
-
-const table = base("Coffee-Stores");
+import { getMinifiedRecords, table } from "../../lib/airtable";
 
 const createCoffeeStore = async (req, res) => {
-  try{  
-  if (req.method == "POST") {
-    //find a record by id
-    const findCoffeeStore = await table
-      .select({
-        filterByFormula: `id = 1`,
-      })
-      .firstPage();
+  try {
+    if (req.method == "POST") {
+      const { id, name, address, country, voting, imgUrl } = req.body;
+      console.log("req.body: ", req.body);
 
-      console.log({findCoffeeStore});
-    if (findCoffeeStore.length > 0) {
+      if (id) {
+        const findCoffeeStore = await table
+          .select({
+            filterByFormula: `id = "${id}"`,
+          })
+          .firstPage();
 
-       const record = findCoffeeStore.map(record => {
-            return {
-                ...record.fields
-            }})
-         
+        console.log("findCoffeeStore: ", findCoffeeStore);
+        console.log("findCoffeeStore.length: ", findCoffeeStore.length);
 
-      res.status(200).json(record);
-    } else {
-        //create a record 
-    const createRecord = await table.create([
-        {
-            fields:{
-                id:"1",
-                name:"Starbucks",
-                address:"123 Main Street",
-                country:"New York",
-                voting:200,
-                imgUrl:"www.abc.de"
-            }
+        if (findCoffeeStore.length > 0) {
+          const record = getMinifiedRecords(findCoffeeStore);
+
+          return res.status(200).json(record);
         }
-    ])
-    const record = createRecord.map(record => {
-        return {
-            ...record.fields
-        }})
-     
-      res.status(200).json( record );
-    }
-}
-}catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Something went wrong" });
-    }
-};
+      } else {
+        return res.status(400).json({ error: "Please provide id" });
+      }
+      //create a record
 
+      if (name) {
+        const createRecord = await table.create([
+          {
+            fields: {
+              id,
+              name,
+              address,
+              country,
+              voting,
+              imgUrl,
+            },
+          },
+        ]);
+        const record = getMinifiedRecords(createRecord);
+
+        return res.status(200).json(record);
+      } else {
+        return res.status(400).json({ error: "Please provide id and name" });
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+};
 
 export default createCoffeeStore;

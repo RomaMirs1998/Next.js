@@ -5,8 +5,7 @@ const unsplash = createApi({
 });
 
 export async function fetchCoffeeStores(location) {
- 
-const unsplashResults = await getListOfCoffeeStores();
+  const unsplashResults = await getListOfCoffeeStores();
   const options = {
     method: "GET",
     headers: {
@@ -15,7 +14,7 @@ const unsplashResults = await getListOfCoffeeStores();
     },
   };
 
-  let latlong = location ? location : "48.184306,16.365822"
+  let latlong = location ? location : "48.184306,16.365822";
 
   const response = await fetch(
     getURLForCoffeeStore(latlong, "coffee", 25),
@@ -23,13 +22,12 @@ const unsplashResults = await getListOfCoffeeStores();
   );
   const data = await response.json();
 
-  return data.results.map((result,index) => {
-    return{
+  return data.results.map((result, index) => {
+    return {
       ...result,
-      imgUrl: unsplashResults[index]
-    }
-  
-})
+      imgUrl: unsplashResults[index],
+    };
+  });
 }
 
 const getURLForCoffeeStore = (latlong, query, limit) => {
@@ -43,9 +41,10 @@ const getListOfCoffeeStores = async () => {
     perPage: 30,
     orientation: "portrait",
     orderBy: "relevant",
-  
   });
 
-  const unsplashResults = photos.response.results.map((photo) => {return photo.urls.regular});
+  const unsplashResults = photos.response.results.map((photo) => {
+    return photo.urls.regular;
+  });
   return unsplashResults;
-}
+};

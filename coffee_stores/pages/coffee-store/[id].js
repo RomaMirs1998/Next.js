@@ -39,21 +39,49 @@ const CoffeStore = (props) => {
   const id = router.query.id;
 
   const [store, setCoffeeStores] = useState(props.storesFromGSP);
-
-  console.log("store", store);
   const { state } = useContext(StoreContext);
-  const { coffeeStores } = state;
+  const { coffeeStores: coffeeStoresFromContext } = state;
 
-  console.log("coffeeStores", coffeeStores);
+  const handleCreateCoffeeStore = async (store) => {
+    try {
+      console.log("store: ", store);
+      const response = await fetch("/api/createCoffeeStore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: `${store.fsq_id}`,
+          name: store.name,
+          address: store.location.formatted_address || "",
+          country: store.location.country || "",
+          voting: 0,
+          imgUrl: store.imgUrl,
+        }),
+      });
+
+      const dbCoffeeStore = await response.json();
+      console.log("dbCoffeeStore: ", dbCoffeeStore);
+    } catch (err) {
+      console.log("Error: ", err);
+    }
+  };
 
   useEffect(() => {
     if (isEmpty(props.storesFromGSP)) {
-      if (coffeeStores.length > 0) {
-        const found = coffeeStores.find((store) => store.fsq_id == id);
-        setCoffeeStores(found);
+      if (coffeeStoresFromContext.length > 0) {
+        const coffeeStoreFromContext = coffeeStoresFromContext.find(
+          (store) => store.fsq_id == id
+        );
+
+        if (coffeeStoreFromContext) {
+          setCoffeeStores(coffeeStoreFromContext);
+          handleCreateCoffeeStore(coffeeStoreFromContext);
+        }
       }
     }
-  }, [id]);
+    handleCreateCoffeeStore(props.storesFromGSP);
+  }, [id, props, props.storesFromGSP]);
 
   if (router.isFallback) {
     return <div>Loading...</div>;
@@ -63,7 +91,6 @@ const CoffeStore = (props) => {
     console.log("Upvote button clicked");
   };
 
-  console.log(id);
   return (
     <div className={styles.layout}>
       <Head>
@@ -89,19 +116,19 @@ const CoffeStore = (props) => {
         </div>
         <div className={cls("glassWithoutHover", styles.col2)}>
           <div className={styles.iconWrapper}>
-            <Image src={places} width={24} height={24} />
+            <Image src={places} width={24} height={24} alt="place" />
             <p className={styles.text}>
               {store.location?.formatted_address || ""}
             </p>
           </div>
 
           <div className={styles.iconWrapper}>
-            <Image src={nearMe} width={24} height={24} />
+            <Image src={nearMe} width={24} height={24} alt="nearme" />
             <p className={styles.text}>{store.location?.country || ""}</p>
           </div>
 
           <div className={styles.iconWrapper}>
-            <Image src={star} width={24} height={24} />
+            <Image src={star} width={24} height={24} alt="star" />
             <p className={styles.text}>1</p>
           </div>
 
