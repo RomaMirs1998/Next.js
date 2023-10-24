@@ -12,6 +12,7 @@ import { fetchCoffeeStores } from "../../lib/coffee-stores";
 import { useContext, useEffect, useState } from "react";
 import { StoreContext } from "../../context/store-context";
 import { isEmpty } from "../../utils";
+import useSWR from "swr";
 
 export async function getStaticProps(context) {
   const data = await fetchCoffeeStores();
@@ -37,35 +38,22 @@ export async function getStaticPaths() {
 const CoffeStore = (props) => {
   const router = useRouter();
   const id = router.query.id;
-
+  const [votingCount, setVotingCount] = useState(0);
   const [store, setCoffeeStores] = useState(props.storesFromGSP);
   const { state } = useContext(StoreContext);
   const { coffeeStores: coffeeStoresFromContext } = state;
+  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, (url) =>
+    fetch(url).then((r) => {
+      if (!r.ok) {
+        throw new Error("Something went wrong with the request");
+      }
+      return r.json();
+    })
+  );
+  const { name, imgUrl } = store;
+  const { address, country } = store.location || store;
 
-  const handleCreateCoffeeStore = async (store) => {
-    try {
-      console.log("store: ", store);
-      const response = await fetch("/api/createCoffeeStore", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: `${store.fsq_id}`,
-          name: store.name,
-          address: store.location.formatted_address || "",
-          country: store.location.country || "",
-          voting: 0,
-          imgUrl: store.imgUrl,
-        }),
-      });
-
-      const dbCoffeeStore = await response.json();
-      console.log("dbCoffeeStore: ", dbCoffeeStore);
-    } catch (err) {
-      console.log("Error: ", err);
-    }
-  };
+  console.log("error: ", error);
 
   useEffect(() => {
     if (isEmpty(props.storesFromGSP)) {
@@ -83,12 +71,46 @@ const CoffeStore = (props) => {
     handleCreateCoffeeStore(props.storesFromGSP);
   }, [id, props, props.storesFromGSP]);
 
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setCoffeeStores(data[0]);
+      setVotingCount(data[0].voting);
+    }
+  }, [data]);
+
+  const handleCreateCoffeeStore = async (store) => {
+    try {
+      const response = await fetch("/api/createCoffeeStore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: `${store.fsq_id}`,
+          name: store.name,
+          address: store.location.formatted_address || "",
+          country: store.location.country || "",
+          voting: 0,
+          imgUrl: store.imgUrl,
+        }),
+      });
+
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setCoffeeStores(data[0]);
+      }
+    } catch (err) {
+      console.log("Error: ", err);
+    }
+  };
+
   if (router.isFallback) {
     return <div>Loading...</div>;
   }
 
   const handleUpvoteButton = () => {
-    console.log("Upvote button clicked");
+    let count = votingCount + 1;
+    setVotingCount(count);
   };
 
   return (
@@ -104,7 +126,7 @@ const CoffeStore = (props) => {
             <Link href="/">&#060;- Back to Home</Link>
           </div>
           <div className={styles.nameWrapper}>
-            <h1 className={styles.name}>{store.name || ""}</h1>
+            <h1 className={styles.name}>{name || ""}</h1>
           </div>
           <Image
             src={store.imgUrl || ""}
@@ -117,19 +139,17 @@ const CoffeStore = (props) => {
         <div className={cls("glassWithoutHover", styles.col2)}>
           <div className={styles.iconWrapper}>
             <Image src={places} width={24} height={24} alt="place" />
-            <p className={styles.text}>
-              {store.location?.formatted_address || ""}
-            </p>
+            <p className={styles.text}>{address || ""}</p>
           </div>
 
           <div className={styles.iconWrapper}>
             <Image src={nearMe} width={24} height={24} alt="nearme" />
-            <p className={styles.text}>{store.location?.country || ""}</p>
+            <p className={styles.text}>{country || ""}</p>
           </div>
 
           <div className={styles.iconWrapper}>
             <Image src={star} width={24} height={24} alt="star" />
-            <p className={styles.text}>1</p>
+            <p className={styles.text}>{votingCount}</p>
           </div>
 
           <button className={styles.upvoteButton} onClick={handleUpvoteButton}>

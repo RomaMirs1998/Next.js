@@ -1,28 +1,17 @@
-import { getMinifiedRecords, table } from "../../lib/airtable";
+import { getMinifiedRecords, table, findStorebyId } from "../../lib/airtable";
 
 const createCoffeeStore = async (req, res) => {
   try {
     if (req.method == "POST") {
       const { id, name, address, country, voting, imgUrl } = req.body;
-      console.log("req.body: ", req.body);
 
       if (id) {
-        const findCoffeeStore = await table
-          .select({
-            filterByFormula: `id = "${id}"`,
-          })
-          .firstPage();
-
-        console.log("findCoffeeStore: ", findCoffeeStore);
-        console.log("findCoffeeStore.length: ", findCoffeeStore.length);
-
-        if (findCoffeeStore.length > 0) {
-          const record = getMinifiedRecords(findCoffeeStore);
-
-          return res.status(200).json(record);
+        const store = await findStorebyId(id);
+        if (store) {
+          res.status(400).json({ error: "Store already exists" });
         }
       } else {
-        return res.status(400).json({ error: "Please provide id" });
+        res.status(400).json({ error: "Please provide id" });
       }
       //create a record
 
@@ -39,16 +28,17 @@ const createCoffeeStore = async (req, res) => {
             },
           },
         ]);
+
         const record = getMinifiedRecords(createRecord);
 
-        return res.status(200).json(record);
+        res.status(200).json(record);
       } else {
-        return res.status(400).json({ error: "Please provide id and name" });
+        res.status(400).json({ error: "Please provide id and name" });
       }
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: "Something went wrong" });
   }
 };
 
