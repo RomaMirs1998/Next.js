@@ -1,50 +1,52 @@
+//initialize unsplash
+
 import { createApi } from "unsplash-js";
 
-const unsplash = createApi({
-  accessKey: process.env.NEXT_PUBLIC_MY_ACCESS_KEY_UNSPLASH,
+// on your node server
+const unsplashApi = createApi({
+  accessKey: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY,
+  //...other fetch options
 });
 
-export async function fetchCoffeeStores(location) {
-  const unsplashResults = await getListOfCoffeeStores();
+const getUrlForCoffeeStores = (latLong, query, limit) => {
+  return `https://api.foursquare.com/v3/places/search?query=${query}&ll=${latLong}&limit=${limit}`;
+};
+
+const getListOfCoffeeStorePhotos = async () => {
+  const photos = await unsplashApi.search.getPhotos({
+    query: "coffee shop",
+    perPage: 30,
+  });
+  const unsplashResults = photos.response?.results || [];
+  return unsplashResults.map((result) => result.urls["small"]);
+};
+
+export const fetchCoffeeStores = async (
+  latLong = "43.653833032607096%2C-79.37896808855945",
+  limit = 6
+) => {
+  const photos = await getListOfCoffeeStorePhotos();
   const options = {
     method: "GET",
     headers: {
-      accept: "application/json",
-      Authorization: process.env.NEXT_PUBLIC_API_KEY,
+      Accept: "application/json",
+      Authorization: process.env.NEXT_PUBLIC_FOURSQUARE_API_KEY,
     },
   };
 
-  let latlong = location ? location : "48.184306,16.365822";
-
   const response = await fetch(
-    getURLForCoffeeStore(latlong, "coffee", 25),
+    getUrlForCoffeeStores(latLong, "coffee", limit),
     options
   );
   const data = await response.json();
-
-  return data.results.map((result, index) => {
+  return data.results.map((result, idx) => {
+    const neighborhood = result.location.neighborhood;
     return {
-      ...result,
-      imgUrl: unsplashResults[index],
+      id: result.fsq_id,
+      address: result.location.address,
+      name: result.name,
+      neighbourhood: neighborhood?.length > 0 ? neighborhood[0] : "",
+      imgUrl: photos.length > 0 ? photos[idx] : null,
     };
   });
-}
-
-const getURLForCoffeeStore = (latlong, query, limit) => {
-  return `https://api.foursquare.com/v3/places/search?query=${query}&ll=${latlong}&limit=${limit}`;
-};
-
-const getListOfCoffeeStores = async () => {
-  const photos = await unsplash.search.getPhotos({
-    query: "Coffee Store",
-    page: 1,
-    perPage: 30,
-    orientation: "portrait",
-    orderBy: "relevant",
-  });
-
-  const unsplashResults = photos.response.results.map((photo) => {
-    return photo.urls.regular;
-  });
-  return unsplashResults;
 };

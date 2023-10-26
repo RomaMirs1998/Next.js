@@ -1,154 +1,206 @@
+import React from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import coffestoresData from "../../data/coffee-stores.json";
 import Head from "next/head";
-import styles from "../../styles/coffee-store.module.css";
 import Image from "next/image";
-import cls from "classnames";
-import star from "../../public/star.svg";
-import nearMe from "../../public/nearMe.svg";
-import places from "../../public/places.svg";
-import { fetchCoffeeStores } from "../../lib/coffee-stores";
-import { useContext, useEffect, useState } from "react";
-import { StoreContext } from "../../context/store-context";
-import { isEmpty } from "../../utils";
+
 import useSWR from "swr";
 
-export async function getStaticProps(context) {
-  const data = await fetchCoffeeStores();
-  const found = data.find((store) => store.fsq_id == context.params.id);
+import cls from "classnames";
 
+import styles from "../../styles/coffee-store.module.css";
+import { fetchCoffeeStores } from "../../lib/coffee-stores";
+
+import { StoreContext } from "../../store/store-context";
+
+import { fetcher, isEmpty } from "../../utils";
+
+export async function getStaticProps(staticProps) {
+  const params = staticProps.params;
+
+  const coffeeStores = await fetchCoffeeStores();
+  const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
+    return coffeeStore.id.toString() === params.id; //dynamic id
+  });
   return {
     props: {
-      storesFromGSP: found ? found : {},
-    }, // will be passed to the page component as props
+      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById : {},
+    },
   };
 }
 
 export async function getStaticPaths() {
-  const data = await fetchCoffeeStores();
+  const coffeeStores = await fetchCoffeeStores();
+  const paths = coffeeStores.map((coffeeStore) => {
+    return {
+      params: {
+        id: coffeeStore.id.toString(),
+      },
+    };
+  });
   return {
-    paths: data.map((store) => ({
-      params: { id: store.fsq_id.toString() },
-    })),
+    paths,
     fallback: true,
   };
 }
 
-const CoffeStore = (props) => {
+const CoffeeStore = (initialProps) => {
+  const { useEffect, useState, useContext } = React;
   const router = useRouter();
+
   const id = router.query.id;
-  const [votingCount, setVotingCount] = useState(0);
-  const [store, setCoffeeStores] = useState(props.storesFromGSP);
-  const { state } = useContext(StoreContext);
-  const { coffeeStores: coffeeStoresFromContext } = state;
-  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, (url) =>
-    fetch(url).then((r) => {
-      if (!r.ok) {
-        throw new Error("Something went wrong with the request");
-      }
-      return r.json();
-    })
+
+  const [coffeeStore, setCoffeeStore] = useState(
+    initialProps.coffeeStore || {}
   );
-  const { name, imgUrl } = store;
-  const { address, country } = store.location || store;
 
-  console.log("error: ", error);
+  const {
+    state: { coffeeStores },
+  } = useContext(StoreContext);
 
-  useEffect(() => {
-    if (isEmpty(props.storesFromGSP)) {
-      if (coffeeStoresFromContext.length > 0) {
-        const coffeeStoreFromContext = coffeeStoresFromContext.find(
-          (store) => store.fsq_id == id
-        );
-
-        if (coffeeStoreFromContext) {
-          setCoffeeStores(coffeeStoreFromContext);
-          handleCreateCoffeeStore(coffeeStoreFromContext);
-        }
-      }
-    }
-    handleCreateCoffeeStore(props.storesFromGSP);
-  }, [id, props, props.storesFromGSP]);
-
-  useEffect(() => {
-    if (data && data.length > 0) {
-      setCoffeeStores(data[0]);
-      setVotingCount(data[0].voting);
-    }
-  }, [data]);
-
-  const handleCreateCoffeeStore = async (store) => {
+  const handleCreateCoffeeStore = async (coffeeStore) => {
     try {
+      const { id, name, voting, imgUrl, neighbourhood, address } = coffeeStore;
       const response = await fetch("/api/createCoffeeStore", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: `${store.fsq_id}`,
-          name: store.name,
-          address: store.location.formatted_address || "",
-          country: store.location.country || "",
+          id,
+          name,
           voting: 0,
-          imgUrl: store.imgUrl,
+          imgUrl,
+          neighbourhood: neighbourhood || "",
+          address: address || "",
         }),
       });
 
-      const data = await response.json();
-      if (data && data.length > 0) {
-        setCoffeeStores(data[0]);
-      }
+      const dbCoffeeStore = await response.json();
     } catch (err) {
-      console.log("Error: ", err);
+      console.error("Error creating coffee store", err);
     }
   };
+
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores.length > 0) {
+        const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
+          return coffeeStore.id.toString() === id; //dynamic id
+        });
+        setCoffeeStore(findCoffeeStoreById);
+        handleCreateCoffeeStore(findCoffeeStoreById);
+      }
+    } else {
+      // SSG
+      handleCreateCoffeeStore(initialProps.coffeeStore);
+    }
+  }, [id, initialProps.coffeeStore, coffeeStores]);
+
+  const {
+    name = "",
+    address = "",
+    neighbourhood = "",
+    imgUrl = "",
+  } = coffeeStore;
+  const [votingCount, setVotingCount] = useState(0);
+
+  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, fetcher);
+
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setCoffeeStore(data[0]);
+      setVotingCount(data[0].voting);
+    }
+  }, [data]);
 
   if (router.isFallback) {
     return <div>Loading...</div>;
   }
 
-  const handleUpvoteButton = () => {
-    let count = votingCount + 1;
-    setVotingCount(count);
+  const handleUpvoteButton = async () => {
+    try {
+      const response = await fetch("/api/favouriteCoffeeStoreById", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+        }),
+      });
+
+      const dbCoffeeStore = await response.json();
+
+      if (dbCoffeeStore && dbCoffeeStore.length > 0) {
+        let count = votingCount + 1;
+        setVotingCount(count);
+      }
+    } catch (err) {
+      console.error("Error upvoting the coffee store", err);
+    }
   };
+
+  if (error) {
+    return <div>Something went wrong retrieving coffee store page</div>;
+  }
 
   return (
     <div className={styles.layout}>
       <Head>
-        <title>{store.name}</title>
-        <meta name="description" content="Generated by create next app" />
-        <link rel="icon" href="/favicon.ico" />
+        <title>{name}</title>
+        <meta name="description" content={`${name} coffee store`} />
       </Head>
       <div className={styles.container}>
         <div className={styles.col1}>
           <div className={styles.backToHomeLink}>
-            <Link href="/">&#060;- Back to Home</Link>
+            <Link href="/">← Back to home</Link>
           </div>
           <div className={styles.nameWrapper}>
-            <h1 className={styles.name}>{name || ""}</h1>
+            <h1 className={styles.name}>{name}</h1>
           </div>
           <Image
-            src={store.imgUrl || ""}
-            alt={store.name}
+            src={
+              imgUrl ||
+              "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
+            }
             width={600}
-            height={500}
+            height={360}
             className={styles.storeImg}
-          ></Image>
+            alt={name}
+          />
         </div>
-        <div className={cls("glassWithoutHover", styles.col2)}>
-          <div className={styles.iconWrapper}>
-            <Image src={places} width={24} height={24} alt="place" />
-            <p className={styles.text}>{address || ""}</p>
-          </div>
 
+        <div className={cls("glass", styles.col2)}>
+          {address && (
+            <div className={styles.iconWrapper}>
+              <Image
+                src="/static/icons/places.svg"
+                width="24"
+                height="24"
+                alt="places icon"
+              />
+              <p className={styles.text}>{address}</p>
+            </div>
+          )}
+          {neighbourhood && (
+            <div className={styles.iconWrapper}>
+              <Image
+                src="/static/icons/nearMe.svg"
+                width="24"
+                height="24"
+                alt="near me icon"
+              />
+              <p className={styles.text}>{neighbourhood}</p>
+            </div>
+          )}
           <div className={styles.iconWrapper}>
-            <Image src={nearMe} width={24} height={24} alt="nearme" />
-            <p className={styles.text}>{country || ""}</p>
-          </div>
-
-          <div className={styles.iconWrapper}>
-            <Image src={star} width={24} height={24} alt="star" />
+            <Image
+              src="/static/icons/star.svg"
+              width="24"
+              height="24"
+              alt="star icon"
+            />
             <p className={styles.text}>{votingCount}</p>
           </div>
 
@@ -161,4 +213,4 @@ const CoffeStore = (props) => {
   );
 };
 
-export default CoffeStore;
+export default CoffeeStore;
