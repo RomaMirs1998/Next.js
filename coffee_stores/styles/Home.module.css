@@ -1,5 +1,3 @@
-/** Mobile first development **/
-
 .container {
   margin-bottom: 14rem /* 224px */;
 }
@@ -15,31 +13,23 @@
 
 .heroImage {
   position: absolute;
-  top: 0px;
+  right: 0;
+  top: 0;
   z-index: 1;
+  width: 400px;
+  height: 300px;
+  filter: brightness(0.6);
 }
 
 .cardLayout {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
-  column-gap: 1.5rem /* 24px */;
-  row-gap: 1.5rem /* 24px */;
+  gap: 2rem /* 16px */;
+  margin-top: 2rem /* 16px */;
 }
 
 .card {
   justify-content: center;
-}
-
-.heading2 {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
-  padding-bottom: 2rem;
-  margin-top: 2rem;
-  color: var(--text-white-100);
-}
-
-.sectionWrapper {
-  margin-top: 5rem;
 }
 
 /** Breakpoints:
@@ -56,13 +46,34 @@
     padding-right: 1rem /* 16px */;
   }
 
+  .heroImage {
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 1;
+    width: 600px;
+    height: 400px;
+  }
+
   .main {
     margin-top: 3rem /* 48px */;
     padding-left: 1.5rem /* 24px */;
     padding-right: 1.5rem /* 24px */;
   }
+
+  .cardHeader{
+    margin-top: 4rem;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    
+  }
+
   .cardLayout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 4rem /* 16px */;
+    margin-top: 2rem /* 32px */;
+    margin-bottom: 2rem /* 32px */;
   }
 }
 
@@ -75,13 +86,13 @@
   .main {
     margin-top: 4rem /* 64px */;
   }
-
-  .heroImage {
-    right: 20%;
-  }
-
   .cardLayout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 4rem /* 16px */;
+    margin-top: 2rem /* 32px */;
+    margin-bottom: 2rem /* 32px */;
+    display: grid;
   }
 }
 
@@ -95,20 +106,11 @@
     padding-left: 2rem /* 32px */;
     padding-right: 2rem /* 32px */;
   }
-  .heroImage {
-    right: 20%;
-  }
   .cardLayout {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .main {
-    margin-top: 7rem /* 112px */;
-  }
-
-  .cardLayout {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 4rem /* 16px */;
+    margin-top: 2rem /* 32px */;
+    margin-bottom: 2rem /* 32px */;
   }
 }
