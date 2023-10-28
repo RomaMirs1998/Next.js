@@ -39,10 +39,7 @@ export default function Home(props) {
 
       fetchData();
     }
-  }, [location]);
-
-  console.log("location", location);
-  console.log("coffeeStores", coffeeStores);
+  }, [location,dispatch]);
 
   const handleBannerBtnClick = () => {
     handleTrackLocation();
@@ -80,10 +77,10 @@ export default function Home(props) {
             <div className={styles.cardLayout}>
               {coffeeStores.map((store) => (
                 <Card
-                  key={store.fsq_id}
+                  key={store.id}
                   name={store.name}
                   image={store.imgUrl || null}
-                  href={`/coffee-store/${store.fsq_id}`}
+                  href={`/coffee-store/${store.id}`}
                 />
               ))}
             </div>
@@ -96,10 +93,10 @@ export default function Home(props) {
             <div className={styles.cardLayout}>
               {props.coffeestores.map((store) => (
                 <Card
-                  key={store.fsq_id}
+                  key={store.id}
                   name={store.name}
                   image={store.imgUrl || null}
-                  href={`/coffee-store/${store.fsq_id}`}
+                  href={`/coffee-store/${store.id}`}
                 />
               ))}
             </div>

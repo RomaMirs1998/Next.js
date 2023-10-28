@@ -9,9 +9,11 @@ const createCoffeeStore = async (req, res) => {
         const store = await findStorebyId(id);
         if (store) {
           res.status(400).json({ error: "Store already exists" });
+          return;
         }
       } else {
         res.status(400).json({ error: "Please provide id" });
+        return;
       }
       //create a record
 
@@ -38,7 +40,7 @@ const createCoffeeStore = async (req, res) => {
     }
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: "Something went wrong1234",err });
   }
 };
 

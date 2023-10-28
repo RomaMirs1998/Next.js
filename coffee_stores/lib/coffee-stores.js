@@ -1,7 +1,7 @@
 import { createApi } from "unsplash-js";
 
 const unsplash = createApi({
-  accessKey: process.env.NEXT_PUBLIC_MY_ACCESS_KEY_UNSPLASH,
+  accessKey: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY,
 });
 
 export async function fetchCoffeeStores(location) {
@@ -10,7 +10,7 @@ export async function fetchCoffeeStores(location) {
     method: "GET",
     headers: {
       accept: "application/json",
-      Authorization: process.env.NEXT_PUBLIC_API_KEY,
+      Authorization: process.env.NEXT_PUBLIC_FOURSQUARE_API_KEY,
     },
   };
 
@@ -24,7 +24,10 @@ export async function fetchCoffeeStores(location) {
 
   return data.results.map((result, index) => {
     return {
-      ...result,
+      id:result.fsq_id,
+      name: result.name,
+      address: result.location.address,
+      country: result.location.country,
       imgUrl: unsplashResults[index],
     };
   });
