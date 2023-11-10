@@ -3,8 +3,22 @@ import Image from "next/image";
 import styles from "@/styles/Home.module.css";
 import Banner from "@/components/Banner";
 import NavBar from "@/components/Navbar";
+import Card from "@/components/Card";
+import React from "react";
+import SectionCard from "@/components/SectionCard";
+import { getVideos } from "@/lib/videos";
 
-export default function Home() {
+export default function Home() : React.JSX.Element {
+  type videos = {
+    size: "small" | "medium" | "large";
+    id: number;
+    imgUrl: string;
+  }
+
+  const disneyVideos : Array<object> = getVideos();
+
+ 
+
   return (
     <>
       <Head>
@@ -17,9 +31,29 @@ export default function Home() {
 
       <NavBar username="Test@gmail.com"/> 
       <Banner title="Clifford the red dog" subTitle="a very cute dog" imgUrl="/static/clifford.webp"/>
-      {/* <Card/> */}
+
+      <div className={styles.sectionWrapper}>
+
+      <SectionCard title="Disney">
+      {disneyVideos.map((video) =>{ 
+        return <Card key={video.id} imgUrl={video.imgUrl} size="large" id={video.id} />
+      })}
+      
+      </SectionCard>
 
 
+      <SectionCard title="Action">
+      {disneyVideos.map((video) =>{
+        return <Card key={video.id} imgUrl={video.imgUrl} size="medium" id={video.id} />
+      })}
+      </SectionCard>
+      <SectionCard title="Comedy">
+      {disneyVideos.map((video) =>{
+        return <Card key={video.id} imgUrl={video.imgUrl} size="small" id={video.id} />
+      })}
+      </SectionCard>
+
+      </div>
       </div>
       </>
   );

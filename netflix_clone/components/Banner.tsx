@@ -1,7 +1,7 @@
 import styles from "./Banner.module.css";
 import Image from "next/image";
 
-const Banner = (props: { title: string; subTitle: string; imgUrl: string }) => {
+const Banner = (props: { title: string; subTitle: string; imgUrl: string }) : React.JSX.Element => {
   const { title, subTitle, imgUrl } = props;
 
   const handleOnPlay = () => {
@@ -17,7 +17,6 @@ const Banner = (props: { title: string; subTitle: string; imgUrl: string }) => {
           </div>
           <h3 className={styles.title}>{title}</h3>
           <h3 className={styles.subTitle}>{subTitle}</h3>
-
           <div className={styles.playBtnWrapper}>
             <button className={styles.btnWithIcon} onClick={handleOnPlay}>
               <Image
