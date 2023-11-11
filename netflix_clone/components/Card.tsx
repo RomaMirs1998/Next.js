@@ -40,6 +40,8 @@ const Card = (props: {
 
   type Scale = {
     scaleY: number;
+  } | {
+    scale: number;
   };
   
 
